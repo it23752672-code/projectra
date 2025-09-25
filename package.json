@@ -1,0 +1,24 @@
+{
+  "name": "projectra-root",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "server": "npm --prefix server run dev",
+    "server:start": "npm --prefix server run start",
+    "client": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "client:preview": "npm --prefix client run preview",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "build": "npm run client:build",
+    "dev:win": "start \"server\" cmd /c \"npm --prefix server run dev\" && timeout /t 2 >nul && start \"client\" cmd /c \"npm --prefix client run dev\"",
+    "dev": "concurrently -n server,client -c blue,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\""
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.18.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
