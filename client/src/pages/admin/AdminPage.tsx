@@ -155,14 +155,17 @@ function AnalyticsTab() {
   )
 }
 
+import AdminUserDashboard from '@/components/Admin/UserManagement/AdminUserDashboard'
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<'plans' | 'vendors' | 'analytics'>('plans')
+  const [tab, setTab] = useState<'users' | 'plans' | 'vendors' | 'analytics'>('users')
   return (
     <div className="grid">
       <div className="col-12">
         <div className="card">
           <h2>Admin</h2>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <Button variant={tab === 'users' ? 'primary' : 'secondary'} onClick={() => setTab('users')}>Users</Button>
             <Button variant={tab === 'plans' ? 'primary' : 'secondary'} onClick={() => setTab('plans')}>Plans</Button>
             <Button variant={tab === 'vendors' ? 'primary' : 'secondary'} onClick={() => setTab('vendors')}>Vendors</Button>
             <Button variant={tab === 'analytics' ? 'primary' : 'secondary'} onClick={() => setTab('analytics')}>Analytics</Button>
@@ -170,6 +173,7 @@ export default function AdminPage() {
         </div>
       </div>
       <div className="col-12">
+        {tab === 'users' && <AdminUserDashboard />}
         {tab === 'plans' && <PlansTab />}
         {tab === 'vendors' && <VendorsTab />}
         {tab === 'analytics' && <AnalyticsTab />}

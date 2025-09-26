@@ -4,28 +4,42 @@ import { getTaskGuidance } from '../utils/ai.js';
 
 export async function createTask(req, res) {
   try {
-    const { title, description, status, projectId, priority, dueDate, assignees } = req.body || {};
+    const { title, taskName, description, taskDescription, status, projectId, priority, dueDate, assignees, assigneeIds, assigneeId, estimatedHours } = req.body || {};
 
-    if (!title || !String(title).trim()) {
-      return res.status(400).json({ message: 'Title is required' });
+    const effectiveTitle = (title || taskName || '').trim();
+    if (!effectiveTitle) {
+      return res.status(400).json({ message: 'Task title/name is required' });
     }
 
     const statusMap = { 'To Do': 'Not Started', 'Done': 'Completed' };
     const normalizedStatus = statusMap[status] || status || 'Not Started';
-    const allowedStatuses = ['Not Started', 'In Progress', 'Completed', 'Blocked'];
+    const allowedStatuses = ['Not Started', 'In Progress', 'Review', 'Completed', 'On Hold', 'Cancelled', 'Blocked'];
     if (normalizedStatus && !allowedStatuses.includes(normalizedStatus)) {
       return res.status(400).json({ message: `Invalid status: ${normalizedStatus}` });
     }
 
+    // Normalize assignee fields
+    let assigneesArray = undefined;
+    if (Array.isArray(assignees)) assigneesArray = assignees;
+    if (Array.isArray(assigneeIds)) assigneesArray = assigneeIds;
+
     const payload = {
-      title: String(title).trim(),
-      description,
+      title: effectiveTitle,
+      taskName: taskName || title,
+      description: description || taskDescription,
+      taskDescription: taskDescription || description,
       status: normalizedStatus,
       projectId,
       priority,
       dueDate,
-      assignees,
+      estimatedHours,
+      assignedBy: req.user?.id,
+      assigneeId,
+      assignees: assigneesArray,
     };
+
+    // Remove undefined fields to avoid overwriting with undefined
+    Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
     const task = await Task.create(payload);
 
@@ -62,14 +76,24 @@ export async function updateTask(req, res) {
   try {
     const { id } = req.params;
     const update = { ...req.body };
+
+    // Map incoming fields to our schema
+    if (update.taskName && !update.title) update.title = update.taskName;
+    if (update.taskDescription && !update.description) update.description = update.taskDescription;
+    if (Array.isArray(update.assigneeIds)) {
+      update.assignees = update.assigneeIds;
+      delete update.assigneeIds;
+    }
+
     if (typeof update.status === 'string') {
       const map = { 'To Do': 'Not Started', 'Done': 'Completed' };
       update.status = map[update.status] || update.status;
-      const allowed = ['Not Started', 'In Progress', 'Completed', 'Blocked'];
+      const allowed = ['Not Started', 'In Progress', 'Review', 'Completed', 'On Hold', 'Cancelled', 'Blocked'];
       if (update.status && !allowed.includes(update.status)) {
         return res.status(400).json({ message: `Invalid status: ${update.status}` });
       }
     }
+
     const task = await Task.findByIdAndUpdate(id, update, { new: true });
     if (!task) return res.status(404).json({ message: 'Not found' });
     const io = req.app.get('io');

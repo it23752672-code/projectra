@@ -10,6 +10,7 @@ router.get('/', listTasks);
 router.post('/', requireRoles('Admin', 'ProjectManager'), createTask);
 router.get('/:id', getTask);
 router.put('/:id', requireRoles('Admin', 'ProjectManager'), updateTask);
+router.patch('/:id', requireRoles('Admin', 'ProjectManager'), updateTask);
 router.delete('/:id', requireRoles('Admin', 'ProjectManager'), deleteTask);
 router.post('/:id/comments', addComment);
 router.patch('/:id/status', changeStatus);

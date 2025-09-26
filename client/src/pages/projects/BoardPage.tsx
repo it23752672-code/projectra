@@ -3,14 +3,19 @@ import KanbanBoard from '@/components/board/KanbanBoard'
 import { api, getErrorMessage } from '@/services/api'
 import Input from '@/components/common/Input'
 import Button from '@/components/common/Button'
+import AssignTaskModal from '@/components/board/AssignTaskModal'
+import { useAuth } from '@/state/AuthContext'
 
 export default function BoardPage() {
+  const { user } = useAuth()
   const [projects, setProjects] = useState<any[]>([])
   const [selected, setSelected] = useState<string>('')
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState('')
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [activeTask, setActiveTask] = useState<any | null>(null)
 
   useEffect(() => {
     (async () => {
@@ -75,13 +80,30 @@ export default function BoardPage() {
       {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div className="loader" /> Loading board...</div>}
       {error && <div className="error">{error}</div>}
       {!loading && !error && (
-        <KanbanBoard
-          tasks={visibleTasks}
-          projectId={selected}
-          onMove={onMove}
-          onCardClick={(t) => { /* future: open modal */ }}
-          onCreated={(task) => setTasks(prev => [...prev, task])}
-        />
+        <>
+          <KanbanBoard
+            tasks={visibleTasks}
+            projectId={selected}
+            onMove={onMove}
+            onCardClick={(t) => {
+              if (user?.role === 'Admin' || user?.role === 'ProjectManager') {
+                setActiveTask(t)
+                setAssignOpen(true)
+              }
+            }}
+            onCreated={(task) => setTasks(prev => [...prev, task])}
+          />
+
+          {assignOpen && activeTask && (
+            <AssignTaskModal
+              projectId={selected}
+              task={activeTask}
+              isOpen={assignOpen}
+              onClose={() => setAssignOpen(false)}
+              onSaved={loadTasks}
+            />
+          )}
+        </>
       )}
     </div>
   )

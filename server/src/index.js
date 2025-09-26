@@ -20,6 +20,8 @@ import networkRoutes from './routes/network.routes.js';
 import performanceRoutes from './routes/performance.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import feedbackRoutes from './routes/feedback.routes.js';
+import projectManagerRoutes from './routes/projectManager.routes.js';
+import teamLeaderRoutes from './routes/teamLeader.routes.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -73,6 +75,8 @@ app.use('/api', miscRoutes);
 app.use('/api/performance', performanceRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/feedback-mgmt', feedbackRoutes);
+app.use('/api/pm', projectManagerRoutes);
+app.use('/api/leader', teamLeaderRoutes);
 
 // Serve client (static) ONLY if build exists to avoid ENOENT
 const __filename = fileURLToPath(import.meta.url);

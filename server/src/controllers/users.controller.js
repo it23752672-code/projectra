@@ -18,7 +18,24 @@ export async function list(req, res) {
   // filter by project involvement
   if (projectId) {
     const proj = await Project.findById(projectId).lean();
-    if (proj) filter._id = { $in: [...(proj.members || []), ...(proj.managers || [])] };
+    if (proj) {
+      const ids = new Set();
+      (proj.members || []).forEach((id: any) => ids.add(String(id)));
+      (proj.managers || []).forEach((id: any) => ids.add(String(id)));
+      if (proj.projectManager) ids.add(String(proj.projectManager));
+      if (Array.isArray(proj.teamMembers)) {
+        for (const tm of proj.teamMembers) {
+          if (tm?.userId) ids.add(String(tm.userId));
+        }
+      }
+      const idArray = Array.from(ids).map((s) => s);
+      if (idArray.length > 0) {
+        filter._id = { $in: idArray };
+      } else {
+        // If project has no recorded members, return none (explicitly impossible set)
+        filter._id = { $in: [] };
+      }
+    }
   }
   // filter by team membership
   if (teamId) {

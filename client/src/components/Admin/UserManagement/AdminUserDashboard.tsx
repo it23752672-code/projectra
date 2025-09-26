@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { adminUserService } from '../../../services/adminUserService'
-import { toast } from 'react-hot-toast'
-import { Plus, Pencil, Trash2, Users, ShieldCheck } from 'lucide-react'
+import { toast } from '@/lib/toast'
+import { Plus, Pencil, Trash2, Users, ShieldCheck, Eye } from 'lucide-react'
 import { useAuth } from '../../../state/AuthContext'
 import CreateUserModal from './CreateUserModal'
 import EditUserModal from './EditUserModal'
+import ConfirmDeleteModal from './ConfirmDeleteModal'
 
 const AdminUserDashboard: React.FC = () => {
   const { user } = useAuth()
@@ -24,6 +25,14 @@ const AdminUserDashboard: React.FC = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc',
   })
+  // temp UI filters with Apply button requirement
+  const [roleFilter, setRoleFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+
+  // delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deletingUser, setDeletingUser] = useState<any | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Align with current backend enums
   const roles = useMemo(() => [
@@ -79,14 +88,24 @@ const AdminUserDashboard: React.FC = () => {
   }
 
   async function handleDeleteUser(userId: string) {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await adminUserService.deleteUser(userId)
-        toast.success('User deleted successfully')
-        fetchUsers()
-      } catch (error: any) {
-        toast.error(error?.response?.data?.message || 'Failed to delete user')
-      }
+    const user = users.find((u) => u._id === userId)
+    setDeletingUser(user || null)
+    setShowDeleteModal(true)
+  }
+
+  async function confirmDelete() {
+    if (!deletingUser) return
+    try {
+      setIsDeleting(true)
+      await adminUserService.deleteUser(deletingUser._id)
+      toast.success('User deleted successfully')
+      setShowDeleteModal(false)
+      setDeletingUser(null)
+      fetchUsers()
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to delete user')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -239,7 +258,7 @@ const AdminUserDashboard: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-            <select value={filters.role} onChange={(e) => setFilters({ ...filters, role: e.target.value, page: 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">All Roles</option>
               {roles.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -249,7 +268,7 @@ const AdminUserDashboard: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">All Statuses</option>
               {statuses.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -267,6 +286,9 @@ const AdminUserDashboard: React.FC = () => {
               <option value="email-asc">Email A-Z</option>
             </select>
           </div>
+        </div>
+        <div className="flex justify-end mt-4">
+          <button onClick={() => setFilters({ ...filters, role: roleFilter, status: statusFilter, page: 1 })} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Apply Filters</button>
         </div>
       </div>
 
@@ -335,6 +357,9 @@ const AdminUserDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
+                      <button onClick={() => { setEditingUser(u); setShowEditModal(true) }} className="text-gray-700 hover:text-gray-900" title="View User">
+                        <Eye className="w-4 h-4" />
+                      </button>
                       <button onClick={() => { setEditingUser(u); setShowEditModal(true) }} className="text-blue-600 hover:text-blue-900" title="Edit User">
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -366,6 +391,17 @@ const AdminUserDashboard: React.FC = () => {
       {/* Edit User Modal */}
       {showEditModal && editingUser && (
         <EditUserModal user={editingUser} onClose={() => { setShowEditModal(false); setEditingUser(null) }} onSubmit={(data: any) => handleUpdateUser(editingUser._id, data)} roles={roles} statuses={statuses} />
+      )}
+
+      {/* Confirm Delete Modal */}
+      {showDeleteModal && deletingUser && (
+        <ConfirmDeleteModal
+          title="Delete User"
+          message={`Are you sure you want to delete ${deletingUser.firstName} ${deletingUser.lastName}? This action cannot be undone.`}
+          onCancel={() => { setShowDeleteModal(false); setDeletingUser(null) }}
+          onConfirm={confirmDelete}
+          loading={isDeleting}
+        />
       )}
     </div>
   )
