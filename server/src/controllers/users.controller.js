@@ -1,6 +1,7 @@
 import { User } from '../models/User.js';
 import { TeamMember } from '../models/TeamMember.js';
 import { Project } from '../models/Project.js';
+import { Task } from '../models/Task.js';
 import { hashPassword } from '../utils/auth.js';
 import { audit } from '../utils/audit.js';
 import { parse } from 'csv-parse/sync';
@@ -18,8 +19,8 @@ export async function list(req, res) {
   // filter by project involvement
   if (projectId) {
     const proj = await Project.findById(projectId).lean();
+    const ids = new Set();
     if (proj) {
-      const ids = new Set();
       (proj.members || []).forEach((id) => ids.add(String(id)));
       (proj.managers || []).forEach((id) => ids.add(String(id)));
       (proj.teamLeaders || []).forEach((id) => ids.add(String(id)));
@@ -29,13 +30,23 @@ export async function list(req, res) {
           if (tm?.userId) ids.add(String(tm.userId));
         }
       }
-      const idArray = Array.from(ids).map((s) => s);
-      if (idArray.length > 0) {
-        filter._id = { $in: idArray };
-      } else {
-        // If project has no recorded members, return none (explicitly impossible set)
-        filter._id = { $in: [] };
+    }
+    // Heuristic: also include anyone already assigned to tasks in this project
+    try {
+      const taskAssignees = await Task.find({ projectId }, { assigneeId: 1, assignees: 1 }).lean();
+      for (const t of taskAssignees) {
+        if (t?.assigneeId) ids.add(String(t.assigneeId));
+        if (Array.isArray(t?.assignees)) {
+          for (const a of t.assignees) ids.add(String(a));
+        }
       }
+    } catch {}
+    const idArray = Array.from(ids);
+    if (idArray.length > 0) {
+      filter._id = { $in: idArray };
+    } else {
+      // Fallback: if the project has no recorded members, do not force an empty result.
+      // Allow listing of users without project restriction. Caller may still pass role/status filters.
     }
   }
   // filter by team membership

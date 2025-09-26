@@ -107,7 +107,14 @@ export async function chat(req, res) {
     ], resources: [] });
   } catch (err) {
     console.error('AI chat error', err);
-    return res.status(500).json({ success: false, error: 'Failed to get AI response', fallback: mockResponse(req.body?.message || '') });
+    const fallbackText = mockResponse(req.body?.message || '');
+    // Graceful degradation: return a successful response with a helpful fallback
+    return res.json({ success: true, response: fallbackText, suggestions: [
+      'How should I prioritize my tasks?',
+      'What are the next steps for my project?',
+      'Which skills should I focus on improving?',
+      'How do I collaborate with a partner company?'
+    ], resources: [], degraded: true });
   }
 }
 
@@ -141,7 +148,10 @@ export async function taskAssistance(req, res) {
     return res.json({ success: true, response: text, taskContext: taskCtx });
   } catch (err) {
     console.error('Task Assistance Error', err);
-    return res.status(500).json({ error: 'Failed to get task assistance' });
+    // Graceful fallback
+    const q = req.body?.question || '';
+    const fb = mockResponse(q || 'task assistance');
+    return res.json({ success: true, response: fb, taskContext: undefined, degraded: true });
   }
 }
 
@@ -174,7 +184,8 @@ export async function projectOnboarding(req, res) {
     return res.json({ success: true, response: text, projectInfo: proj });
   } catch (err) {
     console.error('Project Onboarding Error', err);
-    return res.status(500).json({ error: 'Failed to generate onboarding guide' });
+    const fb = mockResponse('onboarding');
+    return res.json({ success: true, response: fb, degraded: true });
   }
 }
 
