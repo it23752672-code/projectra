@@ -13,6 +13,9 @@ import ProfilePage from './pages/profile/ProfilePage'
 import AppLayout from './components/layout/AppLayout'
 import CompaniesNetworkPage from './pages/network/CompaniesNetworkPage'
 import PerformanceAnalyticsPage from './pages/analytics/PerformanceAnalyticsPage'
+import FeedbackSubmissionForm from './components/Feedback/FeedbackSubmissionForm'
+import UserFeedbackDashboard from './components/Feedback/UserFeedbackDashboard'
+import AdminFeedbackDashboard from './components/Feedback/AdminFeedbackDashboard'
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { token } = useAuth()
@@ -124,6 +127,36 @@ export default function App() {
             <Protected>
               <AppLayout>
                 <PerformanceAnalyticsPage />
+              </AppLayout>
+            </Protected>
+          }
+        />
+        <Route
+          path="/feedback/submit"
+          element={
+            <Protected>
+              <AppLayout>
+                <FeedbackSubmissionForm />
+              </AppLayout>
+            </Protected>
+          }
+        />
+        <Route
+          path="/feedback/my-feedback"
+          element={
+            <Protected>
+              <AppLayout>
+                <UserFeedbackDashboard />
+              </AppLayout>
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin/feedback"
+          element={
+            <Protected>
+              <AppLayout>
+                <AdminFeedbackDashboard />
               </AppLayout>
             </Protected>
           }

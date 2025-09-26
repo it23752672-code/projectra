@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true, lowercase: true, validate: validator.isEmail },
   passwordHash: { type: String, required: true },
   role: { type: String, enum: ['Admin', 'ProjectManager', 'Contributor'], default: 'Contributor', index: true },
+  jobRole: { type: String, enum: ['SE', 'QA', 'UI/UX', 'OPS'] },
   status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active', index: true },
   planId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan' },
   avatarUrl: String,

@@ -12,6 +12,7 @@ export default function Register() {
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [jobRole, setJobRole] = useState('SE')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,7 +21,7 @@ export default function Register() {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await api.post('/auth/register', { firstName, lastName, email, password })
+      const { data } = await api.post('/auth/register', { firstName, lastName, email, password, jobRole })
       login(data.accessToken, data.user)
       nav('/', { replace: true })
     } catch (err) {
@@ -40,6 +41,13 @@ export default function Register() {
         </div>
         <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <label className="small" style={{ display: 'block', marginBottom: 6, marginTop: 8 }}>Job Role</label>
+        <select className="input" value={jobRole} onChange={(e) => setJobRole(e.target.value)} required>
+          <option value="SE">SE</option>
+          <option value="QA">QA</option>
+          <option value="UI/UX">UI/UX</option>
+          <option value="OPS">OPS</option>
+        </select>
         {error && <div className="error" style={{ marginBottom: 8 }}>{error}</div>}
         <Button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</Button>
       </form>

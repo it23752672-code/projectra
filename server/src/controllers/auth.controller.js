@@ -3,13 +3,20 @@ import { hashPassword, comparePassword, signToken, signRefreshToken, verifyRefre
 import validator from 'validator';
 
 export async function register(req, res) {
-  const { firstName, lastName, email, password, role } = req.body;
+  const { firstName, lastName, email, password, role, jobRole } = req.body;
   if (!firstName || !lastName || !email || !password) return res.status(400).json({ message: 'Missing fields' });
   if (!validator.isEmail(email)) return res.status(400).json({ message: 'Invalid email' });
   const exists = await User.findOne({ email });
   if (exists) return res.status(409).json({ message: 'Email already in use' });
+
+  // Validate optional jobRole if provided
+  const allowedJobRoles = ['SE', 'QA', 'UI/UX', 'OPS'];
+  if (jobRole && !allowedJobRoles.includes(jobRole)) {
+    return res.status(400).json({ message: 'Invalid job role' });
+  }
+
   const passwordHash = await hashPassword(password);
-  const user = await User.create({ firstName, lastName, email, passwordHash, role: role || 'Contributor' });
+  const user = await User.create({ firstName, lastName, email, passwordHash, role: role || 'Contributor', jobRole });
   const accessToken = signToken(user);
   const refreshToken = signRefreshToken(user);
   res.status(201).json({ user: sanitize(user), accessToken, refreshToken });
