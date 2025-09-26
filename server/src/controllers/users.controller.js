@@ -20,8 +20,9 @@ export async function list(req, res) {
     const proj = await Project.findById(projectId).lean();
     if (proj) {
       const ids = new Set();
-      (proj.members || []).forEach((id: any) => ids.add(String(id)));
-      (proj.managers || []).forEach((id: any) => ids.add(String(id)));
+      (proj.members || []).forEach((id) => ids.add(String(id)));
+      (proj.managers || []).forEach((id) => ids.add(String(id)));
+      (proj.teamLeaders || []).forEach((id) => ids.add(String(id)));
       if (proj.projectManager) ids.add(String(proj.projectManager));
       if (Array.isArray(proj.teamMembers)) {
         for (const tm of proj.teamMembers) {

@@ -123,7 +123,30 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log('Socket disconnected', socket.id));
 });
 
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`ProJectra API running on port ${PORT}`);
-});
+const BASE_PORT = parseInt(process.env.PORT || '4000', 10);
+const MAX_RETRIES = parseInt(process.env.PORT_RETRIES || '3', 10);
+
+function startServer(port, retriesLeft) {
+  const onListening = () => {
+    console.log(`ProJectra API running on port ${port}`);
+  };
+
+  const onError = (err) => {
+    if (err && err.code === 'EADDRINUSE' && retriesLeft > 0) {
+      const nextPort = port + 1;
+      console.warn(`Port ${port} is in use. Retrying on port ${nextPort}...`);
+      setTimeout(() => startServer(nextPort, retriesLeft - 1), 500);
+    } else {
+      console.error('Server failed to start:', err);
+      process.exit(1);
+    }
+  };
+
+  server.removeAllListeners('listening');
+  server.removeAllListeners('error');
+  server.on('listening', onListening);
+  server.on('error', onError);
+  server.listen(port);
+}
+
+startServer(BASE_PORT, MAX_RETRIES);
